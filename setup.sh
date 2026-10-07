@@ -12,7 +12,11 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 ENV_FILE="$SCRIPT_DIR/.env"
 
 mkdir -p "$TARGET/.opencode/agent"
-chmod -R 755 "$TARGET"
+# Only the tree we just created — not -R on the whole $TARGET, which can
+# already contain pre-existing files (e.g. from a prior docker run) owned by
+# a different user/root, and `set -e` would abort the whole script on the
+# first one chmod can't touch.
+chmod -R 755 "$TARGET/.opencode" 2>/dev/null || true
 cp "$SCRIPT_DIR"/agents/*.md "$TARGET/.opencode/agent/"
 
 [ -f "$ENV_FILE" ] || cp "$SCRIPT_DIR/.env.example" "$ENV_FILE"
