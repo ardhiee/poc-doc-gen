@@ -1,0 +1,171 @@
+/* assistant: layout-only CSS. The chrome (rail, rows, thread, composer,
+ * model switcher) is painted by the kai elements from kit tokens, so a
+ * --kai-color-* override on :root retints everything at once; nothing here
+ * restates a palette. What remains is the page grid and the top bar's
+ * spacing - the genuinely minimal css a block carries. */
+
+/* Deepens every kai-elevation surface (popovers, cards, and — the reason this
+ * is here — the thread's floating "scroll to bottom" button) so they read
+ * clearly as floating above content instead of blending into it. No exposed
+ * part/class hook reaches that button directly from outside its shadow DOM;
+ * this shared token is the one lever that does. */
+:root { --kai-shadow-strength: 2; }
+
+html, body { height: 100%; }
+/* Forced light/neutral on purpose — every kai- element below is also pinned to
+ * theme="light" (see Assistant.tsx), so the page background doesn't flip dark
+ * just because the OS/browser happens to prefer dark mode. */
+body { margin: 0; background: hsl(0 0% 100%); color: hsl(240 10% 3.9%); font: 14px system-ui, sans-serif; }
+
+.app { display: grid; grid-template-columns: 280px 1fr; height: 100vh; }
+/* A third pane, not an overlay: rail | chat | preview, all sharing the page
+ * grid, so the chat column shrinks to make room instead of being covered. */
+.app.with-preview { grid-template-columns: 280px 1fr clamp(360px, 38vw, 640px); }
+
+/* The rail fills its column; a hairline separates it from the main column.
+ * currentColor mixes keep the line theme-correct in both schemes without
+ * restating a token default. */
+kai-conversations.rail {
+  display: block; height: 100%; min-height: 0; overflow: hidden;
+  border-inline-end: 1px solid color-mix(in srgb, currentColor 12%, transparent);
+}
+/* The right-aligned relative time slotted into each row's menu region:
+ * type scale only; the muted tint comes from currentColor. */
+kai-conversation-item .row-menu { display: flex; align-items: center; gap: 0.375rem; }
+kai-conversation-item .row-time { font-size: 0.75rem; color: color-mix(in srgb, currentColor 60%, transparent); }
+/* The delete control: invisible at rest, revealed on row hover — same pattern
+ * as the kit's own hover-reveal action bars elsewhere, so it doesn't clutter
+ * every row with a visible x all the time. */
+kai-conversation-item .row-delete {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 1.25rem; height: 1.25rem; padding: 0; border: none; border-radius: 0.25rem;
+  background: none; color: color-mix(in srgb, currentColor 55%, transparent); cursor: pointer;
+  opacity: 0; transition: opacity 0.1s ease, background 0.1s ease;
+}
+kai-conversation-item:hover .row-delete { opacity: 1; }
+kai-conversation-item .row-delete:hover { background: color-mix(in srgb, currentColor 12%, transparent); color: inherit; }
+
+/* Main column: top bar, thread flexes, composer sits below. */
+.main { display: flex; flex-direction: column; min-height: 0; min-width: 0; }
+.topbar {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 1rem; padding: 0.625rem 1rem;
+  border-bottom: 1px solid color-mix(in srgb, currentColor 12%, transparent);
+}
+.topbar h1 { margin: 0; font-size: 1rem; font-weight: 600; }
+
+/* The click-delegation wrapper around <Thread> (see Assistant.tsx) takes over
+ * the flex sizing kai-thread used to own directly, since it's now one level
+ * removed from .main. */
+.thread-wrap { flex: 1; min-height: 0; min-width: 0; display: flex; flex-direction: column; }
+/* Live "Ns · tokens" readout while a turn streams — a normal-flow bar right
+ * above the composer, NOT pinned to the bottom of the (tall) scroll
+ * container, which put it far below the actual last line when there wasn't
+ * much content yet. Always close to where you're looking instead. */
+.loading-stats {
+  padding: 0 1rem; max-width: 48rem; width: 100%; margin: 0 auto; box-sizing: border-box;
+  font-size: 0.75rem; color: color-mix(in srgb, currentColor 55%, transparent);
+  font-variant-numeric: tabular-nums;
+}
+kai-thread { flex: 1; min-height: 0; display: block; }
+kai-prompt-input { display: block; padding: 0 1rem 1rem; max-width: 48rem; width: 100%; margin: 0 auto; box-sizing: border-box; }
+
+/* Generated-file preview: a THIRD grid column (see .app.with-preview), not an
+ * overlay — rail, chat, and preview all sit side by side in the page's own
+ * layout, rendering the real .docx via docx-preview instead of forcing a
+ * download. */
+/* A document preview is paper — it stays light/white on purpose, regardless
+ * of the app's own dark theme, same as any doc viewer (Drive, Office Online).
+ * Fixed light colors here are deliberate, not an oversight of the token rule
+ * used for the rest of the app. */
+.doc-preview-overlay { display: contents; }
+.doc-preview-panel {
+  height: 100%; min-height: 0; min-width: 0;
+  background: #ffffff; color: #1a1a1a;
+  border-left: 1px solid #e5e5e5;
+  overflow: hidden; display: flex; flex-direction: column;
+}
+.doc-preview-header {
+  display: flex; align-items: center; justify-content: space-between; gap: 0.75rem;
+  padding: 0.75rem 1rem; min-height: 2.75rem; box-sizing: border-box;
+  border-bottom: 1px solid #e5e5e5;
+  background: #f7f7f8;
+}
+.doc-preview-title { display: flex; align-items: center; gap: 0.5rem; min-width: 0; }
+.doc-preview-file-icon { flex-shrink: 0; color: #6b7280; }
+.doc-preview-filename {
+  font-weight: 600; font-size: 0.8125rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.doc-preview-actions { display: flex; align-items: center; gap: 0.375rem; flex-shrink: 0; }
+.doc-preview-download {
+  display: inline-flex; align-items: center; gap: 0.375rem;
+  font-size: 0.8125rem; font-weight: 500; padding: 0.375rem 0.75rem; border-radius: 0.375rem;
+  background: #1a1a1a; color: #ffffff;
+  text-decoration: none; transition: opacity 0.15s ease;
+}
+.doc-preview-download:hover { opacity: 0.85; }
+.doc-preview-download.is-disabled { pointer-events: none; opacity: 0.4; }
+.doc-preview-close {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 1.75rem; height: 1.75rem; background: none; border: none; border-radius: 0.375rem;
+  cursor: pointer; color: #6b7280; transition: background 0.15s ease;
+}
+.doc-preview-close:hover { background: #ececed; color: #1a1a1a; }
+
+.doc-preview-body {
+  flex: 1; min-height: 0; overflow: auto; position: relative;
+  background: #f1f3f4;
+}
+.doc-preview-scale { width: fit-content; min-width: 100%; box-sizing: border-box; padding: 2rem 0; }
+.doc-preview-scale .docx-wrapper { background: transparent; padding: 0; display: flex; flex-direction: column; align-items: center; gap: 1.5rem; }
+.doc-preview-scale .docx-wrapper > section { box-shadow: 0 1px 3px color-mix(in srgb, black 30%, transparent), 0 8px 24px color-mix(in srgb, black 20%, transparent) !important; }
+
+/* .md artifacts (e.g. requirements-analyst's deliverables) — a plain white
+ * page of prose, same spirit as the docx canvas but no page chrome/zoom
+ * since it's not a fixed-size page. */
+.doc-preview-markdown {
+  max-width: 48rem; margin: 0 auto; padding: 2.5rem 3rem; box-sizing: border-box;
+  background: #ffffff; min-height: 100%;
+}
+
+/* .html artifacts (e.g. a self-contained clickable prototype) — sandboxed so
+ * its own scripts can't touch our app, full-bleed since it's usually built
+ * to fill a viewport, not sit in a padded page like prose. */
+.doc-preview-iframe { width: 100%; height: 100%; border: none; display: block; background: #ffffff; }
+
+/* Floating zoom control, bottom-center of the canvas — a magnifier-style
+ * strip like any PDF/doc viewer (Drive, Adobe), not tucked into the header. */
+.doc-preview-zoom {
+  position: absolute; bottom: 1rem; left: 50%; transform: translateX(-50%);
+  display: flex; align-items: center; gap: 0.125rem; padding: 0.25rem;
+  background: #ffffff; border: 1px solid #e5e5e5; border-radius: 999px;
+  box-shadow: 0 4px 12px color-mix(in srgb, black 18%, transparent);
+}
+.doc-preview-zoom button {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 1.75rem; height: 1.75rem; border: none; border-radius: 999px;
+  background: none; color: #1a1a1a; cursor: pointer; transition: background 0.15s ease;
+}
+.doc-preview-zoom button:hover:not(:disabled) { background: #ececed; }
+.doc-preview-zoom button:disabled { color: #b5b5b7; cursor: default; }
+.doc-preview-zoom-pct { width: auto !important; padding: 0 0.625rem; font-size: 0.75rem; font-weight: 500; font-variant-numeric: tabular-nums; }
+
+.doc-preview-status {
+  position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 0.75rem; font-size: 0.8125rem; color: #6b7280; text-align: center; padding: 2rem;
+}
+.doc-preview-error { color: #dc2626; }
+.doc-preview-spinner {
+  width: 1.5rem; height: 1.5rem; border-radius: 50%;
+  border: 2px solid #e5e5e5; border-top-color: #1a1a1a;
+  animation: doc-preview-spin 0.7s linear infinite;
+}
+@keyframes doc-preview-spin { to { transform: rotate(360deg); } }
+
+/* Small screens: the rail leaves; the thread takes the page. Reopening it is
+ * a layout decision the consumer makes (a drawer, a route), not chrome this
+ * block invents. */
+@media (max-width: 720px) {
+  .app { grid-template-columns: 1fr; }
+  kai-conversations.rail { display: none; }
+}

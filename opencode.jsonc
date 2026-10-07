@@ -1,0 +1,40 @@
+// opencode config — https://opencode.ai/config.json
+// Provider is routed through an external LiteLLM proxy (OpenAI-compatible API).
+// LITELLM_BASE_URL / LITELLM_API_KEY come from the container environment (.env).
+{
+  "$schema": "https://opencode.ai/config.json",
+  "model": "litellm/gemini-3.8-flash",
+  "provider": {
+    "litellm": {
+      "npm": "@ai-sdk/openai-compatible",
+      "name": "LiteLLM",
+      "env": ["LITELLM_API_KEY"],
+      "options": {
+        "baseURL": "{env:LITELLM_BASE_URL}",
+        "apiKey": "{env:LITELLM_API_KEY}"
+      },
+      "models": {
+        "gemini-3.8-flash": {
+          "name": "Gemini 3.8 Flash (via LiteLLM)"
+        },
+        "gemini-3.5-flash": {
+          "name": "Gemini 3.5 Flash (via LiteLLM)"
+        },
+        "gemini-3.1-pro-preview": {
+          "name": "Gemini 3.1 Pro Preview (via LiteLLM)"
+        }
+      }
+    }
+  },
+  "mcp": {
+    "cognee": {
+      "type": "remote",
+      "url": "http://cognee-mcp-sse:8000/sse",
+      "enabled": true
+    }
+  },
+  "server": {
+    "hostname": "0.0.0.0",
+    "port": 4096
+  }
+}

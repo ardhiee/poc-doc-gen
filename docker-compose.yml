@@ -1,0 +1,105 @@
+services:
+  opencode:
+    build: .
+    ports:
+      - "4096:4096"
+    volumes:
+      # host folder is the agent's workspace root — generated files land here directly,
+      # and any reference material you drop in is readable by the agent too
+      - /Users/januardi.ismail/Documents/MINDEF-POC:/workspace
+      - ./opencode.jsonc:/workspace/opencode.jsonc:ro
+    env_file:
+      - .env
+    extra_hosts:
+      # lets the container reach a LiteLLM proxy running on the host,
+      # on Linux Docker Engine (Docker Desktop on mac/Windows already does this)
+      - "host.docker.internal:host-gateway"
+    networks:
+      - default
+      - docgen-net
+    restart: unless-stopped
+
+  web:
+    build: ./web
+    ports:
+      - "3200:3200"
+    volumes:
+      # same folder opencode mounts as /workspace — web reads/writes generated
+      # files, fsd-data.json, and session folders directly, same path both sides
+      - /Users/januardi.ismail/Documents/MINDEF-POC:/workspace
+    environment:
+      # service name, not localhost — separate container, same compose network
+      - OPENCODE_BASE_URL=http://opencode:4096
+      - WORKSPACE_ROOT=/workspace
+    depends_on:
+      - opencode
+    restart: unless-stopped
+
+  # Self-contained Cognee, for environments without the external doc-generation
+  # stack. Not started by a plain `docker compose up` — needs --profile cognee.
+  # To actually use it instead of the external one: point opencode.jsonc's
+  # mcp.cognee.url at http://cognee-mcp:8000/sse, and drop the opencode
+  # service's docgen-net network (no longer needed).
+  cognee-postgres:
+    image: pgvector/pgvector:pg15
+    profiles: ["cognee"]
+    environment:
+      - POSTGRES_USER=cognee
+      - POSTGRES_PASSWORD=${COGNEE_DB_PASSWORD:-cognee}
+      - POSTGRES_DB=cognee
+    volumes:
+      - cognee-storage-db:/var/lib/postgresql/data
+    restart: unless-stopped
+
+  cognee:
+    image: cognee/cognee:main
+    profiles: ["cognee"]
+    environment:
+      - DB_PROVIDER=postgres
+      - DB_HOST=cognee-postgres
+      - DB_PORT=5432
+      - DB_NAME=cognee
+      - DB_USERNAME=cognee
+      - DB_PASSWORD=${COGNEE_DB_PASSWORD:-cognee}
+      - VECTOR_DB_PROVIDER=pgvector
+      - VECTOR_DB_HOST=cognee-postgres
+      - VECTOR_DB_PORT=5432
+      - VECTOR_DB_NAME=cognee
+      - VECTOR_DB_USERNAME=cognee
+      - VECTOR_DB_PASSWORD=${COGNEE_DB_PASSWORD:-cognee}
+      - EMBEDDING_PROVIDER=fastembed
+      - EMBEDDING_MODEL=sentence-transformers/all-MiniLM-L6-v2
+      - EMBEDDING_DIMENSIONS=384
+      - LLM_ENDPOINT=${LITELLM_BASE_URL}/v1
+      - LLM_API_KEY=${LITELLM_API_KEY}
+      - LLM_MODEL=openai/gemini-3.8-flash
+      - CACHE_BACKEND=postgres
+      - ENABLE_BACKEND_ACCESS_CONTROL=false
+    volumes:
+      - cognee-storage:/cognee-storage
+      - cognee-fastembed-cache:/app/.fastembed_cache
+    depends_on:
+      - cognee-postgres
+    restart: unless-stopped
+
+  cognee-mcp:
+    image: cognee/cognee-mcp:main
+    profiles: ["cognee"]
+    environment:
+      - TRANSPORT_MODE=sse
+      - API_URL=http://cognee:8000
+      - LLM_API_KEY=${LITELLM_API_KEY}
+      - MCP_ALLOWED_HOSTS=cognee-mcp:*
+    depends_on:
+      - cognee
+    restart: unless-stopped
+
+networks:
+  docgen-net:
+    name: doc-generation_docgen-net
+    external: true
+
+volumes:
+  cognee-storage:
+  cognee-fastembed-cache:
+  cognee-storage-db:
