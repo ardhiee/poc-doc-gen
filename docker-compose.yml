@@ -35,7 +35,8 @@ services:
   # Self-contained Cognee, for environments without an external Cognee stack.
   # Not started by a plain `docker compose up` — needs --profile cognee.
   # To actually use it instead of an external one, point opencode.jsonc's
-  # mcp.cognee.url at http://cognee-mcp:8000/sse.
+  # mcp.cognee.url — matches an external Cognee's hostname too, so no
+  # opencode.jsonc change is needed switching between bundled and external.
   cognee-postgres:
     image: pgvector/pgvector:pg15
     profiles: ["cognee"]
@@ -78,14 +79,14 @@ services:
       - cognee-postgres
     restart: unless-stopped
 
-  cognee-mcp:
+  cognee-mcp-sse:
     image: cognee/cognee-mcp:main
     profiles: ["cognee"]
     environment:
       - TRANSPORT_MODE=sse
       - API_URL=http://cognee:8000
       - LLM_API_KEY=${LITELLM_API_KEY}
-      - MCP_ALLOWED_HOSTS=cognee-mcp:*
+      - MCP_ALLOWED_HOSTS=cognee-mcp-sse:*
     depends_on:
       - cognee
     restart: unless-stopped

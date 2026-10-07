@@ -11,8 +11,8 @@
    `docker-compose.yml`'s `/workspace` mount (both services) at `<new-folder>`.
 2. Cognee (knowledge-base search) — pick one:
    - **None / decide later**: do nothing. `./start.sh` works as-is, Cognee search just won't be available.
-   - **Bundled (this repo)**: in `opencode.jsonc`, set `mcp.cognee.url` to `http://cognee-mcp:8000/sse`.
-     Start with `./start.sh cognee` instead of `./start.sh`.
+   - **Bundled (this repo)**: just start with `./start.sh cognee` instead of `./start.sh` — no
+     `opencode.jsonc` edit needed, the bundled service is named to match what it already expects.
    - **External (already running elsewhere)**: create `docker-compose.override.yml` (not committed,
      machine-specific) attaching the `backend` service to that network — see the one on this Mac for
      an example.
