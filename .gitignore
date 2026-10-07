@@ -3,4 +3,5 @@ web/.env.local
 web/node_modules
 web/.next
 .DS_Store
+docker-compose.override.yml
 

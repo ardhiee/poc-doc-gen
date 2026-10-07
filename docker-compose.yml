@@ -1,5 +1,5 @@
 services:
-  opencode:
+  backend:
     build: .
     ports:
       - "4096:4096"
@@ -14,9 +14,6 @@ services:
       # lets the container reach a LiteLLM proxy running on the host,
       # on Linux Docker Engine (Docker Desktop on mac/Windows already does this)
       - "host.docker.internal:host-gateway"
-    networks:
-      - default
-      - docgen-net
     restart: unless-stopped
 
   web:
@@ -24,22 +21,21 @@ services:
     ports:
       - "3200:3200"
     volumes:
-      # same folder opencode mounts as /workspace — web reads/writes generated
+      # same folder backend mounts as /workspace — web reads/writes generated
       # files, fsd-data.json, and session folders directly, same path both sides
       - /Users/januardi.ismail/Documents/MINDEF-POC:/workspace
     environment:
       # service name, not localhost — separate container, same compose network
-      - OPENCODE_BASE_URL=http://opencode:4096
+      - OPENCODE_BASE_URL=http://backend:4096
       - WORKSPACE_ROOT=/workspace
     depends_on:
-      - opencode
+      - backend
     restart: unless-stopped
 
-  # Self-contained Cognee, for environments without the external doc-generation
-  # stack. Not started by a plain `docker compose up` — needs --profile cognee.
-  # To actually use it instead of the external one: point opencode.jsonc's
-  # mcp.cognee.url at http://cognee-mcp:8000/sse, and drop the opencode
-  # service's docgen-net network (no longer needed).
+  # Self-contained Cognee, for environments without an external Cognee stack.
+  # Not started by a plain `docker compose up` — needs --profile cognee.
+  # To actually use it instead of an external one, point opencode.jsonc's
+  # mcp.cognee.url at http://cognee-mcp:8000/sse.
   cognee-postgres:
     image: pgvector/pgvector:pg15
     profiles: ["cognee"]
@@ -93,11 +89,6 @@ services:
     depends_on:
       - cognee
     restart: unless-stopped
-
-networks:
-  docgen-net:
-    name: doc-generation_docgen-net
-    external: true
 
 volumes:
   cognee-storage:
