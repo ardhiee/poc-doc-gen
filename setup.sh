@@ -36,5 +36,9 @@ prompt_if_unset() {
 prompt_if_unset LITELLM_BASE_URL
 prompt_if_unset LITELLM_API_KEY
 
-echo "Done. Set this in docker-compose.yml (both services):"
-echo "  $TARGET:/workspace"
+# Point both services' /workspace mount at the new folder. Anchored to end of
+# line so it only touches "<path>:/workspace", never "./opencode.jsonc:/workspace/opencode.jsonc:ro".
+sed -i.bak -E "s|^([[:space:]]*- ).*:/workspace\$|\1$TARGET:/workspace|" "$SCRIPT_DIR/docker-compose.yml"
+rm -f "$SCRIPT_DIR/docker-compose.yml.bak"
+
+echo "Done. docker-compose.yml now mounts $TARGET:/workspace."
