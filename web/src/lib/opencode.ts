@@ -2,7 +2,7 @@ import { createOpencodeClient } from "@opencode-ai/sdk";
 
 const DEFAULT_MODEL = {
   providerID: "litellm",
-  modelID: "gemini-3.8-flash",
+  modelID: process.env.LITELLM_MODEL ?? "gemini-3.8-flash",
 };
 
 function sessionFolder(sessionId: string) {

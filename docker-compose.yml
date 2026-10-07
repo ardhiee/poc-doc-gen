@@ -28,6 +28,7 @@ services:
       # service name, not localhost — separate container, same compose network
       - OPENCODE_BASE_URL=http://backend:4096
       - WORKSPACE_ROOT=/workspace
+      - LITELLM_MODEL=${LITELLM_MODEL:-gemini-3.8-flash}
     depends_on:
       - backend
     restart: unless-stopped
